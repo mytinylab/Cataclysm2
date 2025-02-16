@@ -1,3 +1,7 @@
+#include <stdarg.h>
+#include <math.h>
+#include <sstream>
+
 #include "game.h"
 #include "window.h"
 #include "stringfunc.h"
@@ -6,9 +10,6 @@
 #include "pathfind.h"
 #include "files.h"      // For CUSS_DIR
 #include "help.h"
-#include <stdarg.h>
-#include <math.h>
-#include <sstream>
 
 std::vector<std::string> get_pickup_strings(std::vector<Item> *items,
                                             std::vector<bool> *picking_up);
@@ -41,7 +42,7 @@ Game::~Game()
     delete w_map;
   }
 }
-  
+
 bool Game::setup_ui()
 {
   if (!i_hud.load_from_file(CUSS_DIR + "/i_hud.cuss")) {
@@ -622,7 +623,7 @@ there.<c=/>", map->get_name(examine).c_str());
       add_msg( player->read_item_message(it) );
       player->read_item_uid(it.get_uid());
     } break;
-      
+
 
     case IACTION_RELOAD: {
       Item it = player->inventory_single();
@@ -1186,7 +1187,7 @@ void Game::launch_projectile(Entity* shooter, Item it, Ranged_attack attack,
           } else {
             part_hit = BODY_PART_TORSO;
           }
-            
+
           entity_hit->take_damage(DAMAGE_PIERCE, dam, shooter_name, part_hit);
         } //for (int i = 0; i < entities_hit.size(); i++)
       } // Sanity check passed
@@ -1233,7 +1234,7 @@ void Game::launch_projectile(Entity* shooter, Item it, Ranged_attack attack,
     }
     target.x = new_x;
     target.y = new_y;
-        
+
   } // for (int round = 0; round < attack.rounds; round++)
 }
 
@@ -1289,7 +1290,7 @@ void Game::player_move(int xdif, int ydif)
     }
     move_penalty -= 3 * player->skills.get_level(SKILL_DODGE);
     player->use_ap(100 + levels_to_fall * move_penalty);
-    
+
 // If we can move there... move there!
   } else if (player->can_move_to(map, newx, newy)) {
     player->move_to(map, newx, newy);
@@ -1452,7 +1453,7 @@ void Game::draw_all()
   map->draw(w_map, &entities, player->pos, range);
   w_map->refresh();
 }
-  
+
 void Game::update_hud()
 {
 //debugmsg("update_hud(); mes %d, new %d", messages.size(), new_messages);
@@ -1493,7 +1494,7 @@ void Game::update_hud()
   i_hud.set_data("hp_r_arm", player->hp_text(HP_PART_RIGHT_ARM) );
   i_hud.set_data("hp_l_leg", player->hp_text(HP_PART_LEFT_LEG ) );
   i_hud.set_data("hp_r_leg", player->hp_text(HP_PART_RIGHT_LEG) );
-  
+
 //debugmsg("Offset %d\n%s", i_hud.get_int("text_messages"), i_hud.get_str("text_messages").c_str());
   i_hud.draw(w_hud);
   w_hud->refresh();
@@ -1809,7 +1810,7 @@ void Game::pickup_items(int posx, int posy)
 
   std::string message = "You pick up " + list_items(&items_gotten);
   add_msg(message);
-  
+
 }
 
 Tripoint Game::target_selector(int startx, int starty, int range,

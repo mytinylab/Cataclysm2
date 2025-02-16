@@ -262,7 +262,7 @@ nc_color contract(nc_color orig)
   case c_ltcyan:  return c_magenta;
   case c_pink:    return c_blue;
   case c_yellow:  return c_blue;
-  case c_null:  
+  case c_null:
   default:        return c_null;
  }
  return c_null;

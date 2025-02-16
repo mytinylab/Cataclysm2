@@ -1,6 +1,8 @@
 #ifndef __CATACURSE__
 #define __CATACURSE__
-#define _WIN32_WINNT 0x0500
+#ifndef _WIN32_WINNT
+  #define _WIN32_WINNT 0x0500
+#endif
 #define WIN32_LEAN_AND_MEAN
 //#define VC_EXTRALEAN
 #include <windows.h>
@@ -145,6 +147,7 @@ int getmaxx(WINDOW *win);
 int getmaxy(WINDOW *win);
 int move(int y, int x);
 void timeout(int delay);//PORTABILITY, DUMMY FUNCTION
+void flushinp();
 
 //Window Functions, Do not call these outside of catacurse.cpp
 void WinDestroy();

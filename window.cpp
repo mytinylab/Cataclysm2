@@ -84,7 +84,7 @@ glyph Window::glyphat(int x, int y)
  extract_colors(wi & A_COLOR, wi & A_ATTRIBUTES, ret.fg, ret.bg);
  return ret;
 }
- 
+
 void Window::putch(int x, int y, nc_color fg, nc_color bg, long sym)
 {
 /*
@@ -157,7 +157,7 @@ void Window::putstr_raw(int x, int y, nc_color fg, nc_color bg, std::string str,
  mvwprintw(w, y, x, buff);
  wattroff(w, col);
 }
- 
+
 void Window::putstr_n(int x, int y, nc_color fg, nc_color bg, int maxlength,
                       std::string str, ...)
 {
@@ -429,7 +429,7 @@ std::string file_selector(std::string start)
 
  Window w_select(0, 0, winx, winy);
  w_select.outline();
- 
+
 */
 
 std::string string_input_popup(const char *mes, ...)
@@ -580,7 +580,7 @@ long popup_getkey(const char *mes, ...)
  }
  line_num++;
  w.putstr(1, line_num, c_white, c_black, std::string(tmp));
- 
+
  w.refresh();
  long ch = getch();
  return ch;
@@ -623,7 +623,7 @@ bool query_yn(const char *mes, ...)
  }
  line_num++;
  w.putstr(1, line_num, c_ltgray, c_black, std::string(tmp));
- 
+
  w.refresh();
  long ch = getch();
  return (ch == 'y' || ch == 'Y');
@@ -644,7 +644,7 @@ int menu_vec(const char *mes, std::vector<std::string> options)
  Window w(10, 6, width, height);
  w.outline();
  w.putstr(1, 1, c_white, c_black, title);
- 
+
  for (int i = 0; i < options.size(); i++)
   w.putstr(1, i + 2, c_white, c_black, "%c: %s", 'a' + i, options[i].c_str());
  long ch;
@@ -710,7 +710,7 @@ void popup(const char *mes, ...)
  }
  line_num++;
  w.putstr(1, line_num, c_ltgray, c_black, tmp.c_str());
- 
+
  w.refresh();
  long ch;
  do
@@ -755,7 +755,7 @@ void popup_nowait(const char *mes, ...)
  }
  line_num++;
  w.putstr(1, line_num, c_ltgray, c_black, tmp.c_str());
- 
+
  w.refresh();
 }
 
@@ -782,7 +782,7 @@ void popup_fullscreen(const char *mes, ...)
  }
  line_num++;
  w.putstr(1, line_num, c_ltgray, c_black, tmp.c_str());
- 
+
  w.refresh();
  long ch;
  do
@@ -818,7 +818,7 @@ void popup_scrollable(const char *mes, ...)
   line_num++;
   w.putstr(1, line_num, c_ltgray, c_black, tmp.c_str());
 */
-  
+
   long ch;
   do {
     i_popup.draw(&w);

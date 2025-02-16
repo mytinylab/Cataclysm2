@@ -3,9 +3,9 @@
 # DEBUG is best turned on if you plan to debug in gdb -- please do!
 # PROFILE is for use with gprof or a similar program -- don't bother generally
 #WARNINGS = -Wall -Wextra -Wno-switch -Wno-sign-compare -Wno-char-subscripts -Wno-unused-parameter
-DEBUG = -g
+DEBUG = -g -O0
 #PROFILE = -pg
-#OTHERS = -O3
+#OTHERS = -O3 -fno-var-tracking-assignments
 
 ODIR = objwin
 DDIR = .deps
@@ -14,18 +14,22 @@ TARGET = cataclysm2.exe
 CUSSED_TARGET = cussed.exe
 CUSSTEST_TARGET = cusstest.exe
 
-CXX = i686-w64-mingw32-g++
+#CXX = i686-w64-mingw32-g++
+#CXX = x86_64-w64-mingw32-g++
+CXX = c++
 
-LINKER = i686-w64-mingw32-ld
-LINKERFLAGS = -Wl,-stack,12000000,-subsystem,windows
+#LINKER = i686-w64-mingw32-ld
+#LINKERFLAGS = -Wl,-stack,12000000,-subsystem,windows
 
-CFLAGS = $(WARNINGS) $(DEBUG) $(PROFILE) $(OTHERS)
+LD = ld.bfd
+#LDFLAGS = -static -lgdi32
+LDFLAGS = -static -lgdi32 -fuse-ld=bfd
 
-LDFLAGS = -static -lgdi32
+CXXFLAGS = $(WARNINGS) $(DEBUG) $(PROFILE) $(OTHERS) -D_WIN32
 
 SOURCES = $(filter-out cuss_editor.cpp cusstest.cpp, $(wildcard *.cpp))
-CUSSED_SOURCES = cuss.cpp cuss_editor.cpp window.cpp glyph.cpp color.cpp stringfunc.cpp files.cpp
-CUSSTEST_SOURCES = cuss.cpp cusstest.cpp window.cpp glyph.cpp color.cpp stringfunc.cpp files.cpp
+CUSSED_SOURCES = cuss.cpp cuss_editor.cpp window.cpp catacurse.cpp glyph.cpp color.cpp stringfunc.cpp files.cpp
+CUSSTEST_SOURCES = cuss.cpp cusstest.cpp window.cpp catacurse.cpp glyph.cpp color.cpp stringfunc.cpp files.cpp
 _OBJS = $(SOURCES:.cpp=.o)
 _CUSSED_OBJS = $(CUSSED_SOURCES:.cpp=.o)
 _CUSSTEST_OBJS = $(CUSSTEST_SOURCES:.cpp=.o)
@@ -37,13 +41,13 @@ all: $(TARGET) $(CUSSED_TARGET) $(CUSSTEST_TARGET)
 	@
 
 $(TARGET): $(ODIR) $(DDIR) $(OBJS)
-	$(CXX) -o $(TARGET) $(CFLAGS) $(OBJS) $(LDFLAGS) 
+	$(CXX) -o $(TARGET) $(CXXFLAGS) $(OBJS) $(LDFLAGS)
 
 $(CUSSED_TARGET): $(ODIR) $(DDIR) $(CUSSED_OBJS)
-	$(CXX) -o $(CUSSED_TARGET) $(CFLAGS) $(CUSSED_OBJS) $(LDFLAGS) 
+	$(CXX) -o $(CUSSED_TARGET) $(CXXFLAGS) $(CUSSED_OBJS) $(LDFLAGS)
 
 $(CUSSTEST_TARGET): $(ODIR) $(DDIR) $(CUSSTEST_OBJS)
-	$(CXX) -o $(CUSSTEST_TARGET) $(CFLAGS) $(CUSSTEST_OBJS) $(LDFLAGS) 
+	$(CXX) -o $(CUSSTEST_TARGET) $(CXXFLAGS) $(CUSSTEST_OBJS) $(LDFLAGS)
 
 $(ODIR):
 	mkdir $(ODIR)
@@ -52,7 +56,7 @@ $(DDIR):
 	@mkdir $(DDIR)
 
 $(ODIR)/%.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(TARGET) $(CUSSED_TARGET) $(CUSSTEST_TARGET) $(ODIR)/*.o

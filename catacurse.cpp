@@ -2,6 +2,9 @@
 #include "catacurse.h"
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
+#include <array>
+
 //***********************************
 //Globals                           *
 //***********************************
@@ -80,7 +83,7 @@ bool WinCreate()
 //Unregisters, releases the DC if needed, and destroys the window.
 void WinDestroy()
 {
-    if ((WindowDC > 0) && (ReleaseDC(WindowHandle, WindowDC) == 0)){
+    if ((WindowDC != nullptr) && (ReleaseDC(WindowHandle, WindowDC) == 0)){
         WindowDC = 0;
     }
     if ((!WindowHandle == 0) && (!(DestroyWindow(WindowHandle)))){
@@ -178,9 +181,35 @@ void DrawWindow(WINDOW *win)
                 //if (tmp==95){//If your font doesnt draw underscores..uncomment
                 //        HorzLineDIB(drawx,drawy+fontheight-2,drawx+fontwidth,1,FG);
                 //    } else { // all the wa to here
-                    int color = RGB(windowsPalette[FG].rgbRed,windowsPalette[FG].rgbGreen,windowsPalette[FG].rgbBlue);
-                    SetTextColor(backbuffer,color);
-                    ExtTextOut(backbuffer,drawx,drawy,0,NULL,&tmp,1,NULL);
+                /*
+                There's a but in the start_color or somewhere that corrupts the values in windowsPalette
+                so we redefine them here. Otherwise, the text is all black on a black background.
+                */
+                std::array<std::array<int, 3>, 16> wPalette = {{
+                    { { 0,   0,   0 } },    // color 0: Black
+                    { { 0,   0,   196 } },  // color 1
+                    { { 0,   196, 0 } },     // color 2
+                    { { 30,  180, 196 } },   // color 3
+                    { { 196, 0,   0 } },     // color 4
+                    { { 180, 0,   196 } },   // color 5
+                    { { 200, 170, 0 } },     // color 6
+                    { { 196, 196, 196 } },   // color 7
+                    { { 96,  96,  96 } },    // color 8
+                    { { 64,  64,  255 } },   // color 9
+                    { { 0,   240, 0 } },     // color 10
+                    { { 0,   255, 255 } },   // color 11
+                    { { 255, 20,  20 } },    // color 12
+                    { { 240, 0,   255 } },   // color 13
+                    { { 255, 240, 0 } },     // color 14
+                    { { 255, 255, 255 } }    // color 15: White
+                }};
+
+                // Uncommented the debug line only if needed
+                // std::cout << "FG" << 1 << "R " << (int)wPalette[1][2] << " G " << (int)wPalette[1][1] << " B " << (int)wPalette[1][0] << std::endl;
+
+                int color = RGB((int)wPalette[FG][2], (int)wPalette[FG][1], (int)wPalette[FG][0]);
+                SetTextColor(backbuffer, color);
+                ExtTextOutA(backbuffer, drawx, drawy, 0, NULL, &tmp, 1, NULL);
                 //    }     //and this line too.
                 } else if (  tmp < 0 ) {
                     switch (tmp) {
@@ -264,8 +293,8 @@ char * typeface_c;
 std::ifstream fin;
 fin.open("data\\FONTDATA");
  if (!fin.is_open()){
-     MessageBox(WindowHandle, "Failed to open FONTDATA, loading defaults.",
-                NULL, NULL);
+     MessageBoxA(WindowHandle, "Failed to open FONTDATA, loading defaults.",
+                NULL, 0);
      fontheight=16;
      fontwidth=8;
  } else {
@@ -275,8 +304,8 @@ fin.open("data\\FONTDATA");
      fin >> fontwidth;
      fin >> fontheight;
      if ((fontwidth <= 4) || (fontheight <=4)){
-         MessageBox(WindowHandle, "Invalid font size specified!",
-                    NULL, NULL);
+         MessageBoxA(WindowHandle, "Invalid font size specified!",
+                    NULL, 0);
         fontheight=16;
         fontwidth=8;
      }
@@ -306,14 +335,14 @@ fin.open("data\\FONTDATA");
 
  int nResults = AddFontResourceExA("data\\termfont",FR_PRIVATE,NULL);
    if (nResults>0){
-    font = CreateFont(fontheight, fontwidth, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+    font = CreateFontA(fontheight, fontwidth, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                       ANSI_CHARSET, OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
                       PROOF_QUALITY, FF_MODERN, typeface_c);   //Create our font
 
   } else {
-      MessageBox(WindowHandle, "Failed to load default font, using FixedSys.",
-                NULL, NULL);
-       font = CreateFont(fontheight, fontwidth, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+      MessageBoxA(WindowHandle, "Failed to load default font, using FixedSys.",
+                NULL, 0);
+       font = CreateFontA(fontheight, fontwidth, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                       ANSI_CHARSET, OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
                       PROOF_QUALITY, FF_MODERN, "FixedSys");   //Create our font
    }
@@ -481,6 +510,12 @@ int getch(void)
     return lastchar;
 };
 
+void flushinp()
+{
+    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    FlushConsoleInputBuffer(hInput);
+}
+
 //The core printing function, prints characters to the array, and sets colors
 inline int printstring(WINDOW *win, char *fmt)
 {
@@ -633,6 +668,7 @@ int wresize(WINDOW *win, int ysize, int xsize)
 {
   delete win;
   win = newwin(ysize, xsize, 0, 0);
+  return 1;
 }
 
 
@@ -695,6 +731,7 @@ int start_color(void)
  windowsPalette[13]= BGR(240, 0, 255);
  windowsPalette[14]= BGR(255, 240, 0);
  windowsPalette[15]= BGR(255, 255, 255);
+
  return SetDIBColorTable(backbuffer, 0, 16, windowsPalette);
 };
 
