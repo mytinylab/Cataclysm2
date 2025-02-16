@@ -1,9 +1,13 @@
-#include "files.h"
-#include "stringfunc.h" // for no_upper() etc
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fstream>
+#include <filesystem> // for remove_directory
+#include <string> // for remove_directory
+
+#include "files.h"
+#include "stringfunc.h" // for no_upper() etc
+
 
 std::string DATA_DIR;
 std::string CUSS_DIR;
@@ -36,6 +40,7 @@ bool create_directory(std::string name)
   return true;
 }
 
+/*
 bool remove_directory(std::string name)
 {
   if (!directory_exists(name)) {
@@ -58,7 +63,7 @@ bool remove_directory(std::string name)
 
     if (!d_name.empty() && d_name[0] != '.') {
 
-      if (entry->d_type == DT_DIR) {  // remove other directories recursively
+      if (entry->d_type == DATA_DIR) {  // remove other directories recursively
         if (!remove_directory(full_path)) {
           return_value = false;
         }
@@ -78,6 +83,19 @@ bool remove_directory(std::string name)
 
   return return_value;
 }
+*/
+
+bool remove_directory(std::string name)
+{
+    std::filesystem::path dir_path(name);
+
+    if (!std::filesystem::exists(dir_path)) {
+        return false; // Directory does not exist
+    }
+
+    return std::filesystem::remove_all(dir_path) > 0;
+}
+
 
 bool file_exists(std::string name)
 {

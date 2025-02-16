@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+
   do {} while (GAME.main_loop()); // See game.cpp
 
   endwin();           // See window.cpp

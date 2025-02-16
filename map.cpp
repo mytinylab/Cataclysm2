@@ -250,12 +250,12 @@ void Sight_map::add_point(Tripoint p)
   seen.push_back( p );
 }
 
-bool Sight_map::is_initialized()
+bool Sight_map::is_initialized() const
 {
   return initialized;
 }
 
-bool Sight_map::can_see(Tripoint p)
+bool Sight_map::can_see(Tripoint p) const
 {
   for (int i = 0; i < seen.size(); i++) {
     if (seen[i] == p) {
@@ -374,7 +374,7 @@ std::string Tile::get_name_indefinite()
   if (terrain) {
     ret << (terrain->has_flag(TF_PLURAL) ? "some" : "a") << " " <<
            terrain->get_name();
-  } else { 
+  } else {
     ret << "<c=red>BUG - Unknown<c=/>";
   }
   return ret.str();
@@ -468,7 +468,7 @@ std::string Tile::smash(Damage_set dam)
     }
     return sound; // We smashed furniture, we don't get to smash terrain too!
   }
-      
+
   if (!is_smashable()) {  // This also verifies that terrain != NULL
     return "";
   }
@@ -930,7 +930,7 @@ void Submap::generate(Mapgen_spec* spec)
       }
     }
   }
-  
+
 // Next, add items.
   for (std::map<char,Item_area>::iterator it = spec->item_defs.begin();
        it != spec->item_defs.end();
@@ -1371,7 +1371,7 @@ std::string Submap_pool::get_range_text()
   ret << lower.str() << " to " << upper.str() << ")";
   return ret.str();
 }
-  
+
 
 void Submap_pool::remove_point(Tripoint p)
 {
@@ -1426,7 +1426,7 @@ void Submap_pool::clear_submaps(int sector_x, int sector_y)
           debugmsg("Couldn't open '%s' for writing.", filename.str().c_str());
           return;
         }
-  
+
         int start_x = sx * SECTOR_SIZE, start_y = sy * SECTOR_SIZE;
 /*
         if (TESTING_MODE) {
@@ -1691,7 +1691,7 @@ void Map::spawn_monsters(Worldmap *world, int worldx, int worldy,
 
 /*
   int zdex = zlevel + VERTICAL_MAP_SIZE - posz;
-debugmsg("Spawning monsters at World[%d:%d](%s), Submap[%d:%d:%d](%s)", 
+debugmsg("Spawning monsters at World[%d:%d](%s), Submap[%d:%d:%d](%s)",
          worldx, worldy, world->get_name(worldx, worldy).c_str(),
          subx, suby, posz, submaps[subx][suby][zdex]->get_spec_name().c_str());
 */
@@ -2373,6 +2373,7 @@ void Map::build_sight_map(int range, bool force_rebuild)
   }
 }
 
+/*
 void Map::build_tile_sight_map(int tile_x, int tile_y, int tile_z, int range)
 {
   Tile* cur_tile = get_tile(tile_x, tile_y, tile_z);
@@ -2405,8 +2406,8 @@ void Map::build_tile_sight_map(int tile_x, int tile_y, int tile_z, int range)
     max_x = SUBMAP_SIZE * MAP_SIZE - 1;
   }
   int max_y = tile_y + range;
-  if (may_y > SUBMAP_SIZE * MAP_SIZE - 1) {
-    may_y = SUBMAP_SIZE * MAP_SIZE - 1;
+  if (max_y > SUBMAP_SIZE * MAP_SIZE - 1) {
+    max_y = SUBMAP_SIZE * MAP_SIZE - 1;
   }
   int max_z = tile_z + range;
   if (max_z > VERTICAL_MAP_SIZE * 2) {
@@ -2416,6 +2417,57 @@ void Map::build_tile_sight_map(int tile_x, int tile_y, int tile_z, int range)
   for (int x = min_x; x <= max_x; x++) {
     for (int y = min_y; y <= max_y; y++) {
       for (int z = min_z; z <= max_z; z++) {
+
+      } // end for (z)
+    } // end for (y)
+  } // end for (x)
+} // end of Map::build_tile_sight_map
+*/
+void Map::build_tile_sight_map(int tile_x, int tile_y, int tile_z, int range)
+{
+  Tile* cur_tile = get_tile(tile_x, tile_y, tile_z);
+  if (!cur_tile) {  // Safety check
+    debugmsg("Map::build_tile_sight_map(%d, %d, %d, %d) called!",
+             tile_x, tile_y, tile_z, range);
+    return;
+  }
+
+  // range of -1 means "infinite range"
+  if (range == -1) {
+    range = SUBMAP_SIZE * MAP_SIZE;
+  }
+
+  // Set the bounds for our loop.
+  int min_x = std::max(0, tile_x - range);
+  int min_y = std::max(0, tile_y - range);
+  int min_z = std::max(0, tile_z - range);
+  int max_x = std::min(SUBMAP_SIZE * MAP_SIZE - 1, tile_x + range);
+  int max_y = std::min(SUBMAP_SIZE * MAP_SIZE - 1, tile_y + range);
+  int max_z = std::min(VERTICAL_MAP_SIZE * 2, tile_z + range);
+
+  for (int x = min_x; x <= max_x; x++) {
+    for (int y = min_y; y <= max_y; y++) {
+      for (int z = min_z; z <= max_z; z++) {
+
+        // Skip the tile itself (it obviously can see itself)
+        if (x == tile_x && y == tile_y && z == tile_z) {
+          continue;
+        }
+
+        // Check line of sight between the current tile and the target tile
+        std::vector<Tripoint> los_path = line_of_sight(tile_x, tile_y, tile_z, x, y, z);
+
+        // If there's a clear path, mark the tile as visible
+        if (!los_path.empty()) {
+          cur_tile->sight_map.add_point(Tripoint(x, y, z));
+        }
+      } // end for (z)
+    } // end for (y)
+  } // end for (x)
+
+  // Mark the sight map as initialized
+  cur_tile->sight_map.make_initialized();
+}
 
 /* Still using Cataclysm/DDA style LOS.  It sucks and is slow and I hate it.
  * Basically, iterate over all Bresenham lines between [x0,y0] and [x1,y1].
@@ -2619,7 +2671,7 @@ std::vector<Tripoint> Map::line_of_sight(int x0, int y0, int z0,
         z_value += 100;
         z_stepped = true;
       } else if (z_value >= 100) {
-        z_level++; 
+        z_level++;
         z_value -= 100;
         z_stepped = true;
       }
@@ -2654,7 +2706,7 @@ std::vector<Tripoint> Map::line_of_sight(int x0, int y0, int z0,
     if (old_t_value >= 0) {
 // Recalculate the resetting of the t_value
       if (ax > ay) {
-        old_t_value -= ax; 
+        old_t_value -= ax;
       } else {
         old_t_value -= ay;
       }
@@ -2795,7 +2847,7 @@ void Map::draw_area(Window *w, Entity_pool *entities, Tripoint ref,
   draw_area(w, entities, ref.x, ref.y, ref.z, minx, miny, maxx, maxy, range,
             sense);
 }
- 
+
 void Map::draw_area(Window *w, Entity_pool *entities,
                     int refx, int refy, int refz,
                     int minx, int miny, int maxx, int maxy,
@@ -2914,7 +2966,7 @@ void Map::draw_tile(Window* w, Entity_pool *entities,
   }
   w->putglyph(tile_winx, tile_winy, output);
 }
-  
+
 
 Submap* Map::get_center_submap()
 {
